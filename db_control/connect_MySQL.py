@@ -18,10 +18,13 @@ SSL_CA_PATH = os.getenv('SSL_CA_PATH')
 DATABASE_URL = f"mysql+pymysql://{DB_USER}:{DB_PASSWORD}@{DB_HOST}:{DB_PORT}/{DB_NAME}"
 
 # SSL証明書ファイルのパスを絶対パスに変換
-# connect_MySQL.pyの場所から見た相対パス
-current_dir = os.path.dirname(os.path.abspath(__file__))
-backend_dir = os.path.dirname(current_dir)  # db_controlの親ディレクトリ（backend）
-cert_path = os.path.join(backend_dir, "DigiCertGlobalRootG2.crt.pem")
+# # connect_MySQL.pyの場所から見た相対パス
+# current_dir = os.path.dirname(os.path.abspath(__file__))
+# backend_dir = os.path.dirname(current_dir)  # db_controlの親ディレクトリ（backend）
+# cert_path = os.path.join(backend_dir, "DigiCertGlobalRootG2.crt.pem")
+# 
+# デプロイ後 Azureに対するディレクトリ指示
+cert_path = os.getenv("PEM_CONTENT")
 
 # エンジンの作成
 engine = create_engine(

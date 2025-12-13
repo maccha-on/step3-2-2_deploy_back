@@ -1,6 +1,6 @@
 from sqlalchemy import create_engine
 
-import os
+import os, tempfile
 from dotenv import load_dotenv
 
 # 環境変数の読み込み
@@ -22,9 +22,23 @@ DATABASE_URL = f"mysql+pymysql://{DB_USER}:{DB_PASSWORD}@{DB_HOST}:{DB_PORT}/{DB
 # current_dir = os.path.dirname(os.path.abspath(__file__))
 # backend_dir = os.path.dirname(current_dir)  # db_controlの親ディレクトリ（backend）
 # cert_path = os.path.join(backend_dir, "DigiCertGlobalRootG2.crt.pem")
-# 
-# デプロイ後 Azureに対するディレクトリ指示
-cert_path = os.getenv("PEM_CONTENT")
+ 
+# PEMを環境変数から読み取り、クラウド側でtmpファイルに保存する関数
+def prepare_ca_file_from_env() -> str | None:
+    pem = os.getenv("PEM_CONTENT")  # CA証明書本文
+    if not pem:
+        return None
+    pem = pem.replace("\\n", "\n")  # 1行にされてた場合の保険
+    ca_path = os.path.join(tempfile.gettempdir(), "mysql-ca.pem")
+    with open(ca_path, "w") as f:
+        f.write(pem)
+    return ca_path
+
+ca_path = prepare_ca_file_from_env()
+
+connect_args = {}
+if ca_path:
+    connect_args = {"ssl": {"ca": ca_path, "check_hostname": False}}
 
 # エンジンの作成
 engine = create_engine(
@@ -32,13 +46,7 @@ engine = create_engine(
     echo=True,
     pool_pre_ping=True,
     pool_recycle=3600,
-    connect_args={
-        "ssl": {
-        "ca": cert_path,
-        "check_hostname": False
-        }
-    }
-
+    connect_args=connect_args,
 )
 
 
